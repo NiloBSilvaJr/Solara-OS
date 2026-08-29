@@ -104,11 +104,17 @@ Uma única função `agente(papel, entrada, contexto)` em `lib/agente.ts` centra
 | **Casca** — menu de áreas, `/admin`, criação de usuários | ✅ concluída |
 | **Motor** — `agente()`, `execucoes_agentes`, `aprovacoes`, `Organograma`, `FilaAprovacao`, `LinhaDoTempo` | ✅ concluída |
 | **Vendas** — `/vendas`, kanban de pedidos, orquestrador (`triador`→`pesquisador`→`redator`→`revisor`) | ✅ concluída |
-| **Financeiro** — `/financeiro`, importação e conciliação de extrato | pendente |
+| **Financeiro** — `/financeiro`, importação/limpeza de extrato, casamento determinístico, orquestrador (`investigador`→`consolidador`→`revisor`) | ✅ concluída |
 
 ### SQL a aplicar no Supabase
 
-Rodar no SQL Editor, na ordem: `supabase/motor.sql` (tabelas `execucoes_agentes` e `aprovacoes`, RLS, Realtime) e `supabase/vendas.sql` (Realtime em `pedidos_orcamento`). A tabela `perfis` e as tabelas do ERP já existem.
+Rodar no SQL Editor, na ordem:
+
+1. `supabase/motor.sql` — tabelas `execucoes_agentes` e `aprovacoes`, RLS, Realtime.
+2. `supabase/vendas.sql` — Realtime em `pedidos_orcamento`.
+3. `supabase/financeiro.sql` — tabelas `extratos_importados`, `lancamentos`, `divergencias`, RLS, Realtime.
+
+A tabela `perfis` e as tabelas do ERP já existem.
 
 ## Escopo fora desta versão
 

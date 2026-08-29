@@ -6,7 +6,7 @@ import { createAdminClient } from "@/utils/supabase/admin";
 type Decisao = "aprovada" | "editada" | "rejeitada";
 
 // Aplica a decisao da fila (SPEC 3.4) e os efeitos por area
-// (Vendas: SPEC 4.3; Financeiro: SPEC 5.5, ainda nao).
+// (Vendas: SPEC 4.3; Financeiro: SPEC 5.5).
 export async function POST(req: Request) {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
 
   const { data: item } = await admin
     .from("aprovacoes")
-    .select("id, area, item_tipo, item_id, status")
+    .select("id, area, item_tipo, item_id, status, proposta")
     .eq("id", id)
     .maybeSingle();
   if (!item) return NextResponse.json({ erro: "Item nao encontrado." }, { status: 404 });
@@ -77,6 +77,39 @@ export async function POST(req: Request) {
       .from("pedidos_orcamento")
       .update({ status: novoStatus })
       .eq("cod_pedido", item.item_id);
+  }
+
+  if (item.area === "financeiro" && item.item_tipo === "divergencia") {
+    if (decisao === "rejeitada") {
+      // SPEC 5.5: divergencia volta para 'nova' com a observacao.
+      await admin
+        .from("divergencias")
+        .update({ status: "nova", hipotese: null })
+        .eq("id", item.item_id);
+    } else {
+      await admin.from("divergencias").update({ status: "resolvida" }).eq("id", item.item_id);
+
+      const p = (decisao === "editada" ? body.proposta : item.proposta) as
+        | Record<string, unknown>
+        | null;
+      const cods = Array.isArray(p?.cod_titulos_envolvidos)
+        ? (p!.cod_titulos_envolvidos as unknown[]).map(String)
+        : [];
+      const pendente = Number(p?.valor_pendente ?? 0);
+      const hipotese = String(p?.hipotese ?? "");
+      const divInfo = (p?.divergencia ?? {}) as { tipo_inicial?: string };
+
+      let statusTitulo = "pago";
+      if (hipotese === "vencido_sem_pagamento" || divInfo.tipo_inicial === "vencido_sem_pagamento") {
+        statusTitulo = "vencido";
+      } else if (pendente > 0.01) {
+        statusTitulo = "pago_parcial";
+      }
+
+      for (const cod of cods) {
+        await admin.from("titulos_receber").update({ status: statusTitulo }).eq("cod_titulo", cod);
+      }
+    }
   }
 
   return NextResponse.json({ ok: true });
