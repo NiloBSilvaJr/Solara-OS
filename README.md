@@ -101,10 +101,14 @@ Uma única função `agente(papel, entrada, contexto)` em `lib/agente.ts` centra
 | Seção | Estado |
 |---|---|
 | **Fundação** — projeto Next.js, Supabase Auth, `/login`, `/` protegida | ✅ concluída |
-| **Casca** — tabela `perfis`, menu de áreas, `/admin` | pendente |
-| **Motor** — `agente()`, `execucoes_agentes`, `Organograma`, fila de aprovação | pendente |
-| **Vendas** — `/vendas`, kanban de pedidos, orquestrador de Vendas | pendente |
+| **Casca** — menu de áreas, `/admin`, criação de usuários | ✅ concluída |
+| **Motor** — `agente()`, `execucoes_agentes`, `aprovacoes`, `Organograma`, `FilaAprovacao`, `LinhaDoTempo` | ✅ concluída |
+| **Vendas** — `/vendas`, kanban de pedidos, orquestrador (`triador`→`pesquisador`→`redator`→`revisor`) | ✅ concluída |
 | **Financeiro** — `/financeiro`, importação e conciliação de extrato | pendente |
+
+### SQL a aplicar no Supabase
+
+Rodar no SQL Editor, na ordem: `supabase/motor.sql` (tabelas `execucoes_agentes` e `aprovacoes`, RLS, Realtime) e `supabase/vendas.sql` (Realtime em `pedidos_orcamento`). A tabela `perfis` e as tabelas do ERP já existem.
 
 ## Escopo fora desta versão
 
