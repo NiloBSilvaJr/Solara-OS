@@ -25,3 +25,5 @@ ou
 }
 
 Cada motivo deve dizer o que está errado e qual é o dado correto, em uma frase. Não aprove "por bom senso": se uma regra foi violada, devolva.
+
+Responda somente com o JSON acima, sem texto antes ou depois, sem analisar as regras uma a uma em prosa. Não explique seu raciocínio: a primeira coisa que você escreve já é o JSON.

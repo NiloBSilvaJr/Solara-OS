@@ -16,6 +16,30 @@ type Aprovacao = {
 
 type Decisao = "aprovada" | "editada" | "rejeitada";
 
+type ItemContexto = {
+  descricao_cliente?: string;
+  descricao?: string | null;
+  cod_produto?: string | null;
+  quantidade?: number | null;
+  existe?: boolean;
+  atende_estoque?: boolean;
+  estoque?: number | null;
+  prazo_reposicao_dias?: number | null;
+};
+
+type PropostaVendas = { resposta: string; itens: ItemContexto[] };
+
+// So existe para propostas de orcamento do Redator (proposta.resposta + proposta.contexto.itens).
+// Outras propostas (triagem sem orcamento, divergencias do financeiro) caem no textarea JSON normal.
+function extrairPropostaVendas(proposta: unknown): PropostaVendas | null {
+  if (typeof proposta !== "object" || proposta === null) return null;
+  const p = proposta as Record<string, unknown>;
+  if (typeof p.resposta !== "string") return null;
+  const contexto = p.contexto as Record<string, unknown> | undefined;
+  const itens = Array.isArray(contexto?.itens) ? (contexto!.itens as ItemContexto[]) : [];
+  return { resposta: p.resposta, itens };
+}
+
 export default function FilaAprovacao({ area }: { area: string }) {
   const supabase = useMemo(() => createClient(), []);
   const [itens, setItens] = useState<Aprovacao[]>([]);
@@ -161,6 +185,56 @@ export default function FilaAprovacao({ area }: { area: string }) {
           }}
         >
           <h3 style={{ fontSize: "1rem" }}>{aberto.titulo}</h3>
+
+          {(() => {
+            const vendas = extrairPropostaVendas(aberto.proposta);
+            if (!vendas) return null;
+            const naoVendemos = vendas.itens.filter((it) => it.existe === false);
+            return (
+              <>
+                <div>
+                  <label style={{ fontSize: "0.8rem", color: "#555" }}>Resposta para o cliente</label>
+                  <div
+                    style={{
+                      marginTop: "0.3rem",
+                      whiteSpace: "pre-wrap",
+                      background: "#fafafa",
+                      border: "1px solid #e0e0e0",
+                      borderRadius: 6,
+                      padding: "0.75rem",
+                      fontSize: "0.88rem",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {vendas.resposta}
+                  </div>
+                </div>
+
+                {naoVendemos.length > 0 ? (
+                  <div
+                    style={{
+                      background: "#fdecea",
+                      border: "1px solid #f5c6cb",
+                      borderRadius: 6,
+                      padding: "0.6rem 0.75rem",
+                    }}
+                  >
+                    <div style={{ fontWeight: 600, fontSize: "0.85rem", color: "#c0392b" }}>
+                      Itens que a Solara nao vende (confira antes de aprovar)
+                    </div>
+                    <ul style={{ margin: "0.35rem 0 0", paddingLeft: "1.1rem", fontSize: "0.85rem", color: "#7a1f1f" }}>
+                      {naoVendemos.map((it, i) => (
+                        <li key={i}>
+                          {it.descricao_cliente ?? it.descricao ?? "item sem descricao"}
+                          {it.quantidade ? ` (qtd. ${it.quantidade})` : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </>
+            );
+          })()}
 
           <label style={{ fontSize: "0.8rem", color: "#555" }}>Proposta (editavel, JSON)</label>
           <textarea
